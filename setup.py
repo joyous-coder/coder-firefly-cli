@@ -7,6 +7,8 @@ setup(
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="coder",
+    author_email="coder@example.com",
+    url="https://github.com/joyous-coder/coder-firefly-cli",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     entry_points={

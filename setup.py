@@ -13,7 +13,7 @@ setup(
     package_dir={"": "src"},
     entry_points={
         "console_scripts": [
-            "coder-firefly-cli=cli:main",
+            "coder-firefly-cli=coder_firefly_cli.cli:main",
         ],
     },
     install_requires=[

@@ -67,8 +67,10 @@ def transactions_get(id):
 @click.option("--tags", help="标签 (逗号分隔)")
 @click.option("--budget", help="预算名称")
 @click.option("--notes", help="备注")
+@click.option("--group-title", default=None,
+              help="分组标题（可选）。不传则不分组，避免首页显示 '描述: 描述' 的冗余结构。")
 def transactions_create(description, amount, source_account, destination_account,
-                       type, date, category, tags, budget, notes):
+                       type, date, category, tags, budget, notes, group_title):
     """创建新交易"""
     client = get_client()
 
@@ -96,9 +98,13 @@ def transactions_create(description, amount, source_account, destination_account
         "error_if_duplicate_hash_v2": True,
         "apply_rules": True,
         "fire_webhooks": True,
-        "group_title": description,
         "transactions": [transaction_data]
     }
+
+    # 仅当显式传入 --group-title 时才设置分组标题
+    # 不传则避免和 description 重复导致首页显示 "描述: 描述"
+    if group_title:
+        data["group_title"] = group_title
 
     result = client.create_transaction(data)
     output(result)

@@ -74,12 +74,15 @@ def transactions_create(description, amount, source_account, destination_account
     """创建新交易"""
     client = get_client()
 
+    # 始终在 transaction_data 内部设置 group_title=""，避免 Firefly III
+    # 自动将 description 复制为 group_title，导致首页显示 "xxx: xxx"
     transaction_data = {
         "type": type,
         "date": date,
         "amount": amount,
         "description": description,
         "source_id": source_account,
+        "group_title": group_title if group_title else "",
     }
 
     if destination_account:
@@ -101,11 +104,6 @@ def transactions_create(description, amount, source_account, destination_account
         "transactions": [transaction_data]
     }
 
-    # 仅当显式传入 --group-title 时才设置分组标题
-    # 不传则避免和 description 重复导致首页显示 "描述: 描述"
-    if group_title:
-        data["group_title"] = group_title
-
     result = client.create_transaction(data)
     output(result)
 
@@ -117,7 +115,9 @@ def transactions_create(description, amount, source_account, destination_account
 @click.option("--category", help="分类名称")
 @click.option("--tags", help="标签 (逗号分隔)")
 @click.option("--notes", help="备注")
-def transactions_update(id, description, amount, category, tags, notes):
+@click.option("--group-title", "group_title", default=None,
+              help="分组标题（可选）。传空字符串可清空分组标题，解决首页 '描述: 描述' 冗余问题。")
+def transactions_update(id, description, amount, category, tags, notes, group_title):
     """更新现有交易"""
     client = get_client()
 
@@ -132,6 +132,9 @@ def transactions_update(id, description, amount, category, tags, notes):
         transaction_data["tags"] = [tag.strip() for tag in tags.split(",")]
     if notes:
         transaction_data["notes"] = notes
+    # 仅当显式传入 group_title（包含空字符串）时才设置
+    if group_title is not None:
+        transaction_data["group_title"] = group_title
 
     if not transaction_data:
         click.echo("错误: 至少需要提供一个更新字段", err=True)

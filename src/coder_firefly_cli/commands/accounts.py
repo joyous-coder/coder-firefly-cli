@@ -46,9 +46,12 @@ def accounts_get(id):
               type=click.Choice(['asset', 'expense', 'revenue', 'liability']),
               help="账户类型")
 @click.option("--currency-code", default="USD", help="货币代码 (ISO 4217)")
-@click.option("--opening-balance", default="0", help="初始余额")
+@click.option("--opening-balance", default=None, help="初始余额 (不传则不设置)")
 @click.option("--opening-balance-date", help="开户日期 (YYYY-MM-DD)，当 --opening-balance 非 0 时必填")
-@click.option("--account-role", help="账户角色 (用于资产账户)")
+@click.option("--account-role",
+              type=click.Choice(['defaultAsset', 'shared', 'savings', 'cc', 'cashwallet', 'asset', 'debt']),
+              default='defaultAsset',
+              help="账户角色 (asset 类型必填；其他类型会被 API 忽略)")
 @click.option("--iban", help="IBAN")
 @click.option("--bic", help="BIC")
 @click.option("--account-number", help="账户号码")
@@ -57,20 +60,23 @@ def accounts_create(name, type, currency_code, opening_balance, opening_balance_
     """创建新账户"""
     client = get_client()
 
-    # 当 --opening-balance 非默认值 0 时，要求同时提供 --opening-balance-date
-    # Firefly III 后端会拒绝创建带余额但无开户日期的账户 (422)
-    if opening_balance and opening_balance != "0" and not opening_balance_date:
-        raise click.UsageError(
-            "当 --opening-balance 非 0 时，必须同时指定 --opening-balance-date (YYYY-MM-DD)"
-        )
+    # 用 sentinel 区分"用户没传"和"用户传 0/空"
+    # 仅在用户显式传了 --opening-balance 且非 0 时，要求提供 --opening-balance-date
+    if opening_balance is not None and opening_balance != "" and opening_balance != "0":
+        if not opening_balance_date:
+            raise click.UsageError(
+                "当 --opening-balance 非 0 时，必须同时指定 --opening-balance-date (YYYY-MM-DD)"
+            )
 
     data = {
         "name": name,
         "type": type,
         "currency_code": currency_code,
-        "opening_balance": opening_balance,
     }
 
+    # 只有用户显式传了才塞进 body
+    if opening_balance is not None and opening_balance != "":
+        data["opening_balance"] = opening_balance
     if opening_balance_date:
         data["opening_balance_date"] = opening_balance_date
     if account_role:

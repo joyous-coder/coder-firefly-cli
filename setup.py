@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="coder-firefly-cli",
-    version="1.1.1",
+    version="1.1.2",
     description="Firefly III CLI - 个人财务管理命令行工具",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

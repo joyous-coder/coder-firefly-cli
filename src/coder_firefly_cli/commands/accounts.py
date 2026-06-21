@@ -47,22 +47,32 @@ def accounts_get(id):
               help="账户类型")
 @click.option("--currency-code", default="USD", help="货币代码 (ISO 4217)")
 @click.option("--opening-balance", default="0", help="初始余额")
+@click.option("--opening-balance-date", help="开户日期 (YYYY-MM-DD)，当 --opening-balance 非 0 时必填")
 @click.option("--account-role", help="账户角色 (用于资产账户)")
 @click.option("--iban", help="IBAN")
 @click.option("--bic", help="BIC")
 @click.option("--account-number", help="账户号码")
 @click.option("--notes", help="备注")
-def accounts_create(name, type, currency_code, opening_balance, account_role, iban, bic, account_number, notes):
+def accounts_create(name, type, currency_code, opening_balance, opening_balance_date, account_role, iban, bic, account_number, notes):
     """创建新账户"""
     client = get_client()
-    
+
+    # 当 --opening-balance 非默认值 0 时，要求同时提供 --opening-balance-date
+    # Firefly III 后端会拒绝创建带余额但无开户日期的账户 (422)
+    if opening_balance and opening_balance != "0" and not opening_balance_date:
+        raise click.UsageError(
+            "当 --opening-balance 非 0 时，必须同时指定 --opening-balance-date (YYYY-MM-DD)"
+        )
+
     data = {
         "name": name,
         "type": type,
         "currency_code": currency_code,
         "opening_balance": opening_balance,
     }
-    
+
+    if opening_balance_date:
+        data["opening_balance_date"] = opening_balance_date
     if account_role:
         data["account_role"] = account_role
     if iban:
